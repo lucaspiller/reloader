@@ -144,7 +144,21 @@ reload(Module) ->
                 false ->
                     no_test
             end,
-            {reload, TestResult};
+            SpecResult = case erlang:function_exported(Module, spec, 0) of
+                true ->
+                    io:format(" - Running specs for ~p ...", [Module]),
+                    case catch espec:run([Module]) of
+                        ok ->
+                            io:format(" ok.~n"),
+                            spec_passed;
+                        SpecFailureReason ->
+                            io:format(" fail: ~p.~n", [SpecFailureReason]),
+                            spec_failed
+                    end;
+                false ->
+                    no_spec
+            end,
+            {reload, TestResult, SpecResult};
         {error, Reason} ->
             io:format(" fail: ~p.~n", [Reason]),
             error
